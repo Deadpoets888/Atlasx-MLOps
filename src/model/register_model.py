@@ -23,7 +23,7 @@ os.environ["MLFLOW_TRACKING_PASSWORD"] = dagshub_token
 
 dagshub_url = "https://dagshub.com"
 repo_owner = "Deadpoets888"
-repo_name = "YT-Capstone-Project"
+repo_name = "Atlasx-MLOps"
 # Set up MLflow tracking URI
 mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 # -------------------------------------------------------------------------------------
@@ -31,8 +31,8 @@ mlflow.set_tracking_uri(f'{dagshub_url}/{repo_owner}/{repo_name}.mlflow')
 
 # Below code block is for local use
 # -------------------------------------------------------------------------------------
-mlflow.set_tracking_uri('https://dagshub.com/Deadpoets888/Atlasx-MLOps.mlflow')
-dagshub.init(repo_owner='Deadpoets888', repo_name='Atlasx-MLOps', mlflow=True)
+# mlflow.set_tracking_uri('https://dagshub.com/Deadpoets888/Atlasx-MLOps.mlflow')
+# dagshub.init(repo_owner='Deadpoets888', repo_name='Atlasx-MLOps', mlflow=True)
 # -------------------------------------------------------------------------------------
 
 
