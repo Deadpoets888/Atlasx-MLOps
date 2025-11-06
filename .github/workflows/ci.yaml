@@ -71,6 +71,7 @@ jobs:
     
       - name: Check Docker Authentication
         run: docker info
+        
 
       - name: Push Docker image to ECR
         run: |
