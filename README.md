@@ -1,270 +1,405 @@
-🚀 Atlas MLOps Project
+# 🚀 Atlas - End-to-End MLOps Pipeline
 
-An end-to-end Machine Learning Operations (MLOps) pipeline that
-automates everything --- from data ingestion to model deployment ---
-with MLflow, DVC, AWS (S3, ECR, EKS), Docker, CI/CD, and monitoring
-using Prometheus and Grafana.
+An end-to-end Machine Learning Operations (MLOps) pipeline that automates everything — from data ingestion to model deployment — with MLflow, DVC, AWS (S3, ECR, EKS), Docker, CI/CD, and monitoring using Prometheus and Grafana.
 
-🧩 Project Overview
+## 📋 Table of Contents
 
-This project demonstrates how to:
+- [Overview](#overview)
+- [Architecture](#architecture)
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Installation & Setup](#installation--setup)
+- [Pipeline Execution](#pipeline-execution)
+- [Deployment](#deployment)
+- [Monitoring](#monitoring)
+- [CI/CD Pipeline](#cicd-pipeline)
+- [Project Structure](#project-structure)
+- [Contributing](#contributing)
+- [License](#license)
 
-Build a reproducible ML project using the Cookiecutter Data Science
-template.
+## 🎯 Overview
 
-Track experiments using MLflow integrated with DagsHub.
+Atlas is a complete MLOps solution that demonstrates best practices in machine learning lifecycle management. The project implements automated data processing, model training with experiment tracking, containerized deployment on Kubernetes, and real-time monitoring with Prometheus and Grafana.
 
-Version control data and models with DVC.
+## 🏗️ Architecture
 
-Automate CI/CD workflows using GitHub Actions.
+```
+┌─────────────────┐     ┌──────────────┐     ┌─────────────────┐
+│   Data Source   │────▶│  DVC + S3    │────▶│  MLFlow/DagHub  │
+└─────────────────┘     └──────────────┘     └─────────────────┘
+                              │                       │
+                              ▼                       ▼
+                        ┌──────────────┐     ┌─────────────────┐
+                        │   Training   │────▶│ Model Registry  │
+                        └──────────────┘     └─────────────────┘
+                              │                       │
+                              ▼                       ▼
+                        ┌──────────────┐     ┌─────────────────┐
+                        │  Flask App   │────▶│   Docker/ECR    │
+                        └──────────────┘     └─────────────────┘
+                              │                       │
+                              ▼                       ▼
+                        ┌──────────────┐     ┌─────────────────┐
+                        │   EKS Cluster│────▶│   LoadBalancer  │
+                        └──────────────┘     └─────────────────┘
+                              │
+                              ▼
+                ┌──────────────────────────────────┐
+                │  Prometheus + Grafana Monitoring │
+                └──────────────────────────────────┘
+```
 
-Deploy containerized ML apps on AWS EKS (Kubernetes).
+## ✨ Features
 
-Monitor metrics with Prometheus & Grafana.
+- **Experiment Tracking**: MLFlow integration with DagHub for comprehensive experiment management
+- **Data Versioning**: DVC pipeline with S3 remote storage for reproducible datasets
+- **Automated Pipeline**: Complete ML pipeline from data ingestion to model evaluation
+- **Containerization**: Docker-based deployment for consistency across environments
+- **Kubernetes Deployment**: Scalable deployment on AWS EKS with load balancing
+- **CI/CD Integration**: GitHub Actions for automated testing and deployment
+- **Real-time Monitoring**: Prometheus metrics collection with Grafana dashboards
+- **RESTful API**: Flask-based inference service
 
-🗂️ Project Setup 1️⃣ Repository and Environment Setup \# Clone your repo
-git clone `<repo-url>`{=html}
+## 🔧 Prerequisites
 
-# Create virtual environment
+### Software Requirements
+- Python 3.10
+- Conda/Miniconda
+- Docker Desktop
+- AWS CLI v2
+- kubectl v1.28+
+- eksctl v0.216.0+
+- Git
 
-conda create -n atlas python=3.10 conda activate atlas
+### AWS Resources
+- AWS Account with IAM user
+- S3 bucket for data storage
+- ECR repository for Docker images
+- EKS cluster (t3.small nodes)
+- EC2 instances for monitoring (t3.medium)
 
-# Install cookiecutter
+### Accounts
+- GitHub account
+- DagHub account
+- DockerHub account (optional)
 
+## 📦 Installation & Setup
+
+### 1. Initial Project Setup
+
+```bash
+# Clone the repository
+git clone <your-repo-url>
+cd <repo-name>
+
+# Create and activate conda environment
+conda create -n atlas python=3.10
+conda activate atlas
+
+# Install cookiecutter and create project structure
 pip install cookiecutter
+cookiecutter -c v1 https://github.com/drivendata/cookiecutter-data-science
 
-# Create project structure
+# Rename models directory
+mv src/models src/model
+```
 
-cookiecutter -c v1
-https://github.com/drivendata/cookiecutter-data-science
+### 2. MLFlow & DagHub Configuration
 
-# Rename for convention
-
-mv src.models src.model
-
-# Commit and push
-
-git add . git commit -m "Initial project setup" git push
-
-2️⃣ MLFlow + DagsHub Integration
-
-Go to DagsHub Dashboard
-
-Create → New Repo → Connect GitHub Repo
-
-Copy the MLflow Tracking URL and code snippet
-
-Install dependencies:
-
+```bash
+# Install required packages
 pip install dagshub mlflow
 
-Run your experiment notebooks, log metrics to MLflow, then commit & push
-changes.
+# Initialize DVC
+dvc init
 
-3️⃣ DVC Setup dvc init mkdir local_s3 dvc remote add -d mylocal local_s3
+# Add local remote (temporary)
+mkdir local_s3
+dvc remote add -d mylocal local_s3
+```
 
-Add your scripts in src/:
+Visit [DagHub Dashboard](https://dagshub.com/dashboard) and:
+1. Create new repository
+2. Connect your GitHub repository
+3. Copy experiment tracking URL and credentials
+4. Save your DagHub token securely
 
-src/ ├── logger/ ├── data_ingestion.py ├── s3_connections.py ├──
-data_preprocessing.py ├── feature_engineering.py ├── model_building.py
-├── model_evaluation.py └── register_model.py
+### 3. AWS Configuration
 
-Then create:
+```bash
+# Install AWS tools
+pip install dvc[s3] awscli
 
-dvc.yaml \# pipeline definition params.yaml \# hyperparameters
-
-Run pipeline:
-
-dvc repro dvc status git add . git commit -m "Added DVC pipeline" git
-push
-
-4️⃣ Add AWS S3 as Remote Storage
-
-Create an IAM User and S3 bucket in AWS.
-
-Install required packages:
-
-pip install "dvc\[s3\]" awscli
-
-Configure AWS CLI:
-
+# Configure AWS credentials
 aws configure
+# Enter: AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, region
 
-Add S3 as DVC remote:
+# Add S3 as DVC remote
+dvc remote add -d myremote s3://<your-bucket-name>
+```
 
-dvc remote add -d myremote s3://`<bucket-name>`{=html} dvc commit dvc
-push
+### 4. Install Dependencies
 
-5️⃣ Flask Application Setup mkdir flask_app cd flask_app pip install
-flask
+```bash
+pip install -r requirements.txt
+```
 
-Run the Flask app locally. Then push your changes:
+## 🔄 Pipeline Execution
 
-dvc push git add . git commit -m "Added Flask app" git push
+### Run DVC Pipeline
 
-6️⃣ CI/CD Setup (GitHub Actions)
+```bash
+# Execute the complete pipeline
+dvc repro
 
-Freeze requirements:
+# Check pipeline status
+dvc status
 
-pip freeze \> requirements.txt
+# Commit and push data to remote storage
+dvc commit
+dvc push
 
-Add workflow file:
+# Version control
+git add .
+git commit -m "Pipeline execution"
+git push
+```
 
-.github/workflows/ci.yaml
+### Flask Application
 
-Generate DagsHub token:
+```bash
+cd flask_app
+python app.py
+```
 
-Go to: DagsHub Repo → Settings → Tokens → Generate new token
+Access the application at `http://localhost:5000`
 
-Example:
+## 🐳 Docker Deployment
 
-capstone_test: 54b1d67648a9b1267ef906fsdfsd8b292f779f0
+### Build and Run Locally
 
-Add this token to GitHub Secrets & Variables
+```bash
+# Generate requirements for Flask app
+cd flask_app
+pipreqs . --force
 
-Add test and script directories:
+# Build Docker image (from root directory)
+cd ..
+docker build -t capstone-app:latest .
 
-tests/ scripts/
+# Run container with environment variables
+docker run -p 8888:5000 \
+  -e CAPSTONE_TEST=<your-dagshub-token> \
+  capstone-app:latest
+```
 
-🐳 Docker Setup pip install pipreqs cd flask_app pipreqs . --force
+### Push to ECR
 
-Add Dockerfile, start Docker Desktop, then build and run:
+Set up GitHub Secrets:
+- `AWS_ACCESS_KEY_ID`
+- `AWS_SECRET_ACCESS_KEY`
+- `AWS_REGION`
+- `AWS_ACCOUNT_ID`
+- `ECR_REPOSITORY`
+- `CAPSTONE_TEST` (DagHub token)
 
-docker build -t capstone-app:latest . docker run -p 8888:5000 -e
-CAPSTONE_TEST=`<your_token>`{=html} capstone-app:latest
+The CI/CD pipeline will automatically build and push to ECR.
 
-(Optional: Push image to DockerHub)
+## ☸️ Kubernetes Deployment
 
-☁️ AWS Secrets for CI/CD
+### Prerequisites Setup (Windows)
 
-Add the following in GitHub Secrets:
+```powershell
+# Install kubectl
+Invoke-WebRequest -Uri "https://dl.k8s.io/release/v1.28.2/bin/windows/amd64/kubectl.exe" -OutFile "kubectl.exe"
+Move-Item -Path .\kubectl.exe -Destination "C:\Windows\System32"
 
-Secret Name Description AWS_ACCESS_KEY_ID IAM user access key
-AWS_SECRET_ACCESS_KEY IAM user secret AWS_REGION Example: us-east-1
-ECR_REPOSITORY Example: capstone-proj AWS_ACCOUNT_ID Your AWS account
-number
+# Install eksctl
+Invoke-WebRequest -Uri "https://github.com/weaveworks/eksctl/releases/download/v0.158.0/eksctl_Windows_amd64.zip" -OutFile "eksctl.zip"
+Expand-Archive -Path .\eksctl.zip -DestinationPath .
+Move-Item -Path .\eksctl.exe -Destination "C:\Windows\System32\eksctl.exe"
 
-Give AmazonEC2ContainerRegistryFullAccess to the IAM user.
+# Verify installations
+aws --version
+kubectl version --client
+eksctl version
+```
 
-☸️ EKS Deployment 🧰 Prerequisites
+### Create EKS Cluster
 
-Ensure:
+```bash
+# Create cluster
+eksctl create cluster \
+  --name flask-app-cluster \
+  --region us-east-1 \
+  --nodegroup-name flask-app-nodes \
+  --node-type t3.small \
+  --nodes 1 \
+  --nodes-min 1 \
+  --nodes-max 1 \
+  --managed
 
-AWS CLI (MSI version)
-
-kubectl
-
-eksctl
-
-Install if missing:
-
-# kubectl
-
-Invoke-WebRequest -Uri
-"https://dl.k8s.io/release/v1.28.2/bin/windows/amd64/kubectl.exe"
--OutFile "kubectl.exe" Move-Item .`\kubectl`{=tex}.exe
-"C:`\Windows`{=tex}`\System32`{=tex}`\kubectl`{=tex}.exe"
-
-# eksctl
-
-Invoke-WebRequest -Uri
-"https://github.com/weaveworks/eksctl/releases/download/v0.158.0/eksctl_Windows_amd64.zip"
--OutFile "eksctl.zip" Expand-Archive .`\eksctl`{=tex}.zip
--DestinationPath . Move-Item .`\eksctl`{=tex}.exe
-"C:`\Windows`{=tex}`\System32`{=tex}`\eksctl`{=tex}.exe"
-
-🚀 Create EKS Cluster eksctl create cluster\
---name flask-app-cluster\
---region us-east-1\
---nodegroup-name flask-app-nodes\
---node-type t3.small\
---nodes 1 --nodes-min 1 --nodes-max 1 --managed
-
-Update config:
-
+# Update kubeconfig
 aws eks --region us-east-1 update-kubeconfig --name flask-app-cluster
 
-Verify setup:
+# Verify cluster
+kubectl get nodes
+kubectl get namespaces
+```
 
-aws eks list-clusters kubectl get nodes kubectl get svc
+### Deploy Application
 
-🔁 Deploy via CI/CD
+```bash
+# Apply Kubernetes manifests
+kubectl apply -f deployment.yaml
 
-Edit:
+# Check deployment
+kubectl get pods
+kubectl get svc
 
-ci.yaml
-
-deployment.yaml
-
-Dockerfile
-
-Update node security group inbound rule for port 5000.
-
-Once deployment succeeds:
-
+# Get LoadBalancer URL
 kubectl get svc flask-app-service
+```
 
-Access app:
+Access your application at: `http://<EXTERNAL-IP>:5000`
 
-curl http://`<external-ip>`{=html}:5000
+### Cluster Management
 
-📊 Monitoring Setup 🔹 Prometheus
+```bash
+# Delete cluster when done
+eksctl delete cluster --name flask-app-cluster --region us-east-1
 
-EC2 Setup:
+# Verify deletion
+eksctl get cluster --region us-east-1
+```
 
-Type: t3.medium
+## 📊 Monitoring
 
-Ports: 9090 (Prometheus), 22 (SSH)
+### Prometheus Setup
 
-sudo apt update && sudo apt upgrade -y wget
-https://github.com/prometheus/prometheus/releases/download/v2.46.0/prometheus-2.46.0.linux-amd64.tar.gz
-tar -xvzf prometheus-2.46.0.linux-amd64.tar.gz sudo mv
-prometheus-2.46.0.linux-amd64 /etc/prometheus sudo mv
-/etc/prometheus/prometheus /usr/local/bin/
+Launch an Ubuntu EC2 instance (t3.medium, 20GB storage) with security group allowing ports 9090 and 22.
 
-Configuration (/etc/prometheus/prometheus.yml):
+```bash
+# Connect to instance
+ssh -i your-key.pem ubuntu@<ec2-public-ip>
 
-global: scrape_interval: 15s
+# Update system
+sudo apt update && sudo apt upgrade -y
 
-scrape_configs: - job_name: "flask-app" static_configs: - targets:
-\["`<external-loadbalancer-ip>`{=html}:5000"\]
+# Download and install Prometheus
+wget https://github.com/prometheus/prometheus/releases/download/v2.46.0/prometheus-2.46.0.linux-amd64.tar.gz
+tar -xvzf prometheus-2.46.0.linux-amd64.tar.gz
+mv prometheus-2.46.0.linux-amd64 prometheus
 
-Run Prometheus:
+# Move to standard paths
+sudo mv prometheus /etc/prometheus
+sudo mv /etc/prometheus/prometheus /usr/local/bin/
 
+# Configure Prometheus
+sudo nano /etc/prometheus/prometheus.yml
+```
+
+Add configuration:
+
+```yaml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: "flask-app"
+    static_configs:
+      - targets: ["<LOADBALANCER-URL>:5000"]
+```
+
+Start Prometheus:
+
+```bash
 /usr/local/bin/prometheus --config.file=/etc/prometheus/prometheus.yml
+```
 
-Access UI: 👉 http://`<ec2-public-ip>`{=html}:9090
+Access Prometheus at: `http://<prometheus-ec2-ip>:9090`
 
-🔹 Grafana
+### Grafana Setup
 
-EC2 Setup:
+Launch another Ubuntu EC2 instance (t3.medium, 20GB storage) with security group allowing ports 3000 and 22.
 
-Type: t3.medium
+```bash
+# Connect to instance
+ssh -i your-key.pem ubuntu@<ec2-public-ip>
 
-Ports: 3000 (Grafana), 22 (SSH)
+# Update system
+sudo apt update && sudo apt upgrade -y
 
-sudo apt update && sudo apt upgrade -y wget
-https://dl.grafana.com/oss/release/grafana_10.1.5_amd64.deb sudo apt
-install ./grafana_10.1.5_amd64.deb -y sudo systemctl start
-grafana-server sudo systemctl enable grafana-server
+# Download and install Grafana
+wget https://dl.grafana.com/oss/release/grafana_10.1.5_amd64.deb
+sudo apt install ./grafana_10.1.5_amd64.deb -y
 
-Access UI: 👉 http://`<ec2-public-ip>`{=html}:3000 Login: admin / admin
+# Start Grafana service
+sudo systemctl start grafana-server
+sudo systemctl enable grafana-server
+sudo systemctl status grafana-server
+```
 
-Add Prometheus Data Source:
+Access Grafana at: `http://<grafana-ec2-ip>:3000`
 
-http://`<prometheus-ec2-ip>`{=html}:9090
+**Default credentials**: admin/admin
 
-Build your dashboards and visualize Flask app metrics 🎯
+**Add Prometheus Data Source**:
+1. Navigate to Configuration → Data Sources
+2. Add Prometheus
+3. URL: `http://<prometheus-ec2-ip>:9090`
+4. Save & Test
+5. Create dashboards
 
-✅ Final Architecture Overview Local Dev → GitHub Repo → DagsHub +
-MLflow ↓ DVC + AWS S3 → CI/CD (GitHub Actions) ↓ Docker Image → AWS ECR
-→ AWS EKS ↓ Prometheus (Metrics) → Grafana (Dashboards)
+## 🔐 CI/CD Pipeline
 
-🧠 Technologies Used Category Tools ML Workflow Cookiecutter, DVC,
-MLflow Cloud AWS (S3, ECR, EKS, EC2) CI/CD GitHub Actions Deployment
-Docker, Kubernetes Monitoring Prometheus, Grafana Tracking DagsHub App
-Flask 💡 Author
+The project uses GitHub Actions for continuous integration and deployment.
 
-Abhishek Kushwaha 📧 \[your.email@example.com\] 
+### Pipeline Stages
+
+1. **Test**: Run unit tests and integration tests
+2. **Build**: Create Docker image
+3. **Push**: Upload image to Amazon ECR
+4. **Deploy**: Update Kubernetes deployment on EKS
+
+### Triggering Deployment
+
+```bash
+git add .
+git commit -m "Your changes"
+git push origin main
+```
+
+The pipeline automatically triggers on push to main branch.
+
+## 📁 Project Structure
+
+```
+├── .github/
+│   └── workflows/
+│       └── ci.yaml              # CI/CD pipeline configuration
+├── flask_app/
+│   ├── app.py                   # Flask application
+│   ├── requirements.txt         # Flask dependencies
+│   └── templates/               # HTML templates
+├── src/
+│   ├── data_ingestion.py        # Data loading module
+│   ├── data_preprocessing.py    # Data cleaning
+│   ├── feature_engineering.py   # Feature creation
+│   ├── model_building.py        # Model training
+│   ├── model_evaluation.py      # Model assessment
+│   ├── register_model.py        # Model registration
+│   ├── s3_connections.py        # AWS S3 utilities
+│   └── logger.py                # Logging configuration
+├── tests/                       # Test suite
+├── scripts/                     # Utility scripts
+├── deployment.yaml              # Kubernetes deployment config
+├── Dockerfile                   # Container definition
+├── dvc.yaml                     # DVC pipeline definition
+├── params.yaml                  # Pipeline parameters
+└── requirements.txt             # Project dependencies
+```
 
 
+
+**Built with ❤️ using MLOps best practices**
